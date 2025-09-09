@@ -1,10 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" />
-  <title>Ponsonby Prints</title>
+    <meta charset="UTF-8">
+    <title>Spreadsheet ID Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2em; background: #fafafa; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 0.5em; }
+        th { background: #eee; }
+        .redirect-btn {
+            display: inline-block;
+            background: #1976d2;
+            color: #fff;
+            padding: 0.75em 2em;
+            margin-bottom: 2em;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .redirect-btn:hover {
+            background: #1252a2;
+        }
+    </style>
 </head>
 <body>
-  <p>Redirecting to <a href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header">Ponsonby Prints Form</a>...</p>
+    <h1>Spreadsheet ID Viewer</h1>
+    <a class="redirect-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
+        Click here
+    </a>
+    <table id="id-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data goes here -->
+        </tbody>
+    </table>
+    <script>
+    // Link to your Google Sheet as CSV
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0';
+
+    fetch(SHEET_CSV_URL)
+        .then(response => response.text())
+        .then(csv => {
+            const rows = csv.split('\n').map(row => row.split(','));
+            // Find the "ID" column index (case sensitive)
+            const header = rows[0];
+            let idCol = header.findIndex(col => col.trim() === "ID");
+            if (idCol === -1) {
+                alert("ID column not found!");
+                return;
+            }
+            const tbody = document.querySelector('#id-table tbody');
+            rows.slice(1).forEach(row => {
+                if (row.length > idCol && row[idCol].trim()) {
+                    const tr = document.createElement('tr');
+                    const td = document.createElement('td');
+                    td.textContent = row[idCol].trim();
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                }
+            });
+        })
+        .catch(err => {
+            alert("Failed to load sheet: " + err);
+        });
+    </script>
 </body>
 </html>
