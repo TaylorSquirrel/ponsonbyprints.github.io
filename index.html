@@ -1,20 +1,153 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ponsonby Prints by Taylor and George</title>
     <title>PonsonbyPrints</title>
+    <meta name="google-signin-client_id" content="574156991942-neadflkj2h0p3ofrqnc7heasmuuudrtf.apps.googleusercontent.com">
     <style>
         body { font-family: Arial, sans-serif; padding: 2em; background: #fafafa; }
         h1 { color: #333; }
-@@ -28,110 +28,110 @@
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 0.5em; }
+        th { background: #eee; }
+        .redirect-btn {
+            display: inline-block;
+            background: #1976d2;
+            color: #fff;
+            padding: 0.75em 2em;
+            margin-bottom: 2em;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .redirect-btn:hover {
+            background: #1252a2;
+        }
+        .admin-btn, .config-btn {
+            position: fixed;
+            top: 1em;
+            right: 1em;
+            background: #222;
+            color: #fff;
+            border: none;
+            padding: 0.6em 1.5em;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .config-btn {
+            right: 8em;
+            background: #1976d2;
+        }
+        #config-panel, #admin-panel {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 350px;
+            background: #fff;
+            border: 2px solid #1976d2;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 2em 1.5em 1.5em 1.5em;
+            border-radius: 10px;
+            z-index: 1002;
+        }
+        #config-panel h2, #admin-panel h2 {
+            margin-top: 0;
+        }
+        #config-panel .close-btn, #admin-panel .close-btn {
+            float: right;
+            background: #eee;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #222;
+            padding: 0.2em 0.7em;
+            font-size: 1.1em;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        #admin-error, #config-error {
+            color: #c00;
+            margin-top: 1em;
+            text-align: center;
+        }
+        #config-panel label {
+            display: block;
+            margin-top: 1em;
+            font-weight: bold;
+        }
+        #config-panel input[type=text] {
+            width: 100%;
+            padding: 0.4em;
+            margin-top: 0.3em;
+            margin-bottom: 0.8em;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #config-panel button.save-btn {
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            padding: 0.5em 1.2em;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        #config-panel button.save-btn:hover {
+            background: #1252a2;
+        }
     </style>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-    <h1>Spreadsheet Status Viewer</h1>
+    <button class="config-btn" id="configBtn">Config</button>
+    <button class="admin-btn" id="adminBtn">Admin Panel</button>
+    <div id="overlay"></div>
+    <!-- Config Panel -->
+    <div id="config-panel">
+        <button class="close-btn" id="closeConfigPanel" title="Close">&times;</button>
+        <h2>Configuration Panel</h2>
+        <form id="configForm">
+            <label for="ytLink">YouTube Channel Link</label>
+            <input type="text" id="ytLink" name="ytLink" required>
+
+            <label for="sheetLink">Spreadsheet CSV Link</label>
+            <input type="text" id="sheetLink" name="sheetLink" required>
+
+            <button type="submit" class="save-btn">Save</button>
+            <div id="config-error"></div>
+        </form>
+    </div>
+    <!-- Admin Panel (you can expand this if needed) -->
+    <div id="admin-panel">
+        <button class="close-btn" id="closeAdminPanel" title="Close">&times;</button>
+        <h2>Admin Panel</h2>
+        <div>
+            <p>Welcome, <span id="admin-email"></span>!</p>
+            <p>This is your admin panel.</p>
+        </div>
+    </div>
     <h1>Ponsonby Prints by Taylor and George</h1>
-    <a class="redirect-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
+    <a class="redirect-btn" id="form-link" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
         Click here for form
     </a>
+    <a class="redirect-btn" id="yt-link" href="https://www.youtube.com/channel/UCTj4-8HDqVT2lejp7t20Zrg" target="_blank" rel="noopener">
+    <a class="redirect-btn" id="yt-link" href="" target="_blank" rel="noopener">
+        Live feed of printer1
+    </a>
+    <div id="admin-error"></div>
     <table id="status-table">
         <thead>
             <tr>
@@ -27,9 +160,134 @@
         </tbody>
     </table>
     <script>
-    // Google Sheet as CSV
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0';
+    // --- CONFIGURABLE DEFAULTS ---
+    const DEFAULT_YT_LINK = "https://www.youtube.com/channel/UCTj4-8HDqVT2lejp7t20Zrg";
+    const DEFAULT_SHEET_LINK = "https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0";
+    // --- GOOGLE SIGN-IN ---
+    const GOOGLE_CLIENT_ID = "574156991942-neadflkj2h0p3ofrqnc7heasmuuudrtf.apps.googleusercontent.com";
+    const ADMIN_EMAIL = "taylorsquirrel05@gmail.com";
+    let googleInitialized = false;
+    let pendingConfigPanel = false;
+    // === CHANGE THESE TWO VARIABLES TO UPDATE LINKS ===
+    const YOUTUBE_LINK = "https://www.youtube.com/channel/UCTj4-8HDqVT2lejp7t20Zrg";
+    const SPREADSHEET_CSV_LINK = "https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0";
+    // === END OF CONFIGURABLE VARIABLES ===
 
+    // -- Config Storage helpers --
+    function getConfig() {
+        return {
+            yt: localStorage.getItem("ytLink") || DEFAULT_YT_LINK,
+            sheet: localStorage.getItem("sheetLink") || DEFAULT_SHEET_LINK
+        };
+    }
+    function setConfig({yt, sheet}) {
+        if (yt) localStorage.setItem("ytLink", yt);
+        if (sheet) localStorage.setItem("sheetLink", sheet);
+    }
+    function updateLinks() {
+        const conf = getConfig();
+        document.getElementById("yt-link").href = conf.yt;
+        document.getElementById("sheetLink") && (document.getElementById("sheetLink").value = conf.sheet);
+        document.getElementById("ytLink") && (document.getElementById("ytLink").value = conf.yt);
+    }
+
+    // -- Config Panel logic --
+    function showConfigPanel(email) {
+        // Fill form fields with current config
+        const conf = getConfig();
+        document.getElementById("ytLink").value = conf.yt;
+        document.getElementById("sheetLink").value = conf.sheet;
+        document.getElementById("config-error").textContent = "";
+        document.getElementById('config-panel').style.display = "block";
+        document.getElementById('overlay').style.display = "block";
+    }
+    function hideConfigPanel() {
+        document.getElementById('config-panel').style.display = "none";
+        document.getElementById('overlay').style.display = "none";
+    }
+
+    // --- Admin Panel logic (optional, as before) ---
+    function showAdminPanel(email) {
+        document.getElementById('admin-email').textContent = email;
+        document.getElementById('admin-panel').style.display = "block";
+        document.getElementById('overlay').style.display = "block";
+    }
+    function hideAdminPanel() {
+        document.getElementById('admin-panel').style.display = "none";
+        document.getElementById('overlay').style.display = "none";
+    }
+    // Set the YouTube link
+    document.getElementById("yt-link").href = YOUTUBE_LINK;
+
+    // --- Google Sign-in callback ---
+    function handleCredentialResponse(response) {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        if (payload.email === ADMIN_EMAIL) {
+            if (pendingConfigPanel) {
+                showConfigPanel(payload.email);
+                pendingConfigPanel = false;
+            } else {
+                showAdminPanel(payload.email);
+            }
+        } else {
+            document.getElementById("admin-error").textContent = "Access denied: only taylorsquirrel05@gmail.com can open this panel.";
+            document.getElementById("config-error").textContent = "Access denied: only taylorsquirrel05@gmail.com can open this panel.";
+        }
+    }
+
+    // --- Bootstrapping UI and events ---
+    window.onload = function() {
+        updateLinks();
+        // Config Button
+        document.getElementById('configBtn').onclick = function() {
+            document.getElementById("config-error").textContent = "";
+            if (!googleInitialized) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse,
+                });
+                googleInitialized = true;
+            }
+            pendingConfigPanel = true;
+            google.accounts.id.prompt();
+        };
+        document.getElementById('closeConfigPanel').onclick = hideConfigPanel;
+        // Admin Button
+        document.getElementById('adminBtn').onclick = function() {
+            document.getElementById("admin-error").textContent = "";
+            if (!googleInitialized) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse,
+                });
+                googleInitialized = true;
+            }
+            pendingConfigPanel = false;
+            google.accounts.id.prompt();
+        };
+        document.getElementById('closeAdminPanel').onclick = hideAdminPanel;
+        document.getElementById('overlay').onclick = function() {
+            hideConfigPanel();
+            hideAdminPanel();
+        };
+        // Config Save
+        document.getElementById('configForm').onsubmit = function(e) {
+            e.preventDefault();
+            const yt = document.getElementById("ytLink").value.trim();
+            const sheet = document.getElementById("sheetLink").value.trim();
+            if (!yt || !sheet) {
+                document.getElementById("config-error").textContent = "Both fields are required.";
+                return;
+            }
+            setConfig({yt, sheet});
+            updateLinks();
+            hideConfigPanel();
+            // Reload spreadsheet data with new link
+            loadSheetAndTable();
+        };
+    };
+
+    // --- Table Rendering (uses config) ---
     // Status mapping
     const statusMap = {
         "1": "Need payment",
@@ -61,8 +319,17 @@
         if (value || row.length) { row.push(value); rows.push(row); }
         return rows;
     }
+    function loadSheetAndTable() {
+        const conf = getConfig();
+        fetch(conf.sheet)
+            .then(response => response.text())
+            .then(csv => {
+                const rows = parseCSV(csv);
+                if (!rows.length) {
+                    alert("No data found in spreadsheet!");
+                    return;
 
-    fetch(SHEET_CSV_URL)
+    fetch(SPREADSHEET_CSV_LINK)
         .then(response => response.text())
         .then(csv => {
             const rows = parseCSV(csv);
@@ -80,6 +347,13 @@
                     idCol = i;
                     break;
                 }
+                const header = rows[0].map(h => h.trim());
+                const nameCol = header.findIndex(col => col === "Name");
+                let idCol = -1;
+                for (let i = header.length - 1; i >= 0; i--) {
+                    if (header[i] === "ID") {
+                        idCol = i;
+                        break;
             }
             if (nameCol === -1 || idCol === -1) {
                 alert("Name or ID column not found!");
@@ -110,7 +384,42 @@
                     tr.appendChild(tdStatus);
                     tbody.appendChild(tr);
                 }
+                if (nameCol === -1 || idCol === -1) {
+                    alert("Name or ID column not found!");
+                    return;
+                }
+                const tbody = document.querySelector('#status-table tbody');
+                tbody.innerHTML = '';
+                rows.slice(1).forEach(row => {
+                    const name = row[nameCol] && row[nameCol].trim();
+                    const idRaw = row[idCol] && row[idCol].trim();
+                    if (name && idRaw) {
+                        let id = idRaw;
+                        let status = idRaw;
+                        let match = /^(\d+)=/.exec(idRaw);
+                        if (match) {
+                            id = match[1];
+                            status = statusMap[id] || idRaw;
+                        } else {
+                            status = statusMap[idRaw] || idRaw;
+                        }
+                        const tr = document.createElement('tr');
+                        const tdName = document.createElement('td');
+                        const tdStatus = document.createElement('td');
+                        tdName.textContent = name;
+                        tdStatus.textContent = status;
+                        tr.appendChild(tdName);
+                        tr.appendChild(tdStatus);
+                        tbody.appendChild(tr);
+                    }
+                });
+            })
+            .catch(err => {
+                alert("Failed to load sheet: " + err);
             });
+    }
+    // Initial load
+    loadSheetAndTable();
         })
         .catch(err => {
             alert("Failed to load sheet: " + err);
