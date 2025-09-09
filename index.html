@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>PonsonbyPrints</title>
+    <meta name="google-signin-client_id" content="574156991942-neadflkj2h0p3ofrqnc7heasmuuudrtf.apps.googleusercontent.com">
     <style>
         body { font-family: Arial, sans-serif; padding: 2em; background: #fafafa; }
         h1 { color: #333; }
@@ -25,16 +26,82 @@
         .redirect-btn:hover {
             background: #1252a2;
         }
+        .admin-btn {
+            position: fixed;
+            top: 1em;
+            right: 1em;
+            background: #222;
+            color: #fff;
+            border: none;
+            padding: 0.6em 1.5em;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        #admin-panel {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 350px;
+            background: #fff;
+            border: 2px solid #1976d2;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 2em 1.5em 1.5em 1.5em;
+            border-radius: 10px;
+            z-index: 1002;
+        }
+        #admin-panel h2 {
+            margin-top: 0;
+        }
+        #admin-panel .close-btn {
+            float: right;
+            background: #eee;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #222;
+            padding: 0.2em 0.7em;
+            font-size: 1.1em;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        #admin-error {
+            color: #c00;
+            margin-top: 1em;
+            text-align: center;
+        }
     </style>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+    <button class="admin-btn" id="adminBtn">Admin Panel</button>
+    <div id="overlay"></div>
+    <div id="admin-panel">
+        <button class="close-btn" id="closeAdminPanel" title="Close">&times;</button>
+        <h2>Configuration Panel</h2>
+        <div>
+            <!-- Add your configuration controls here -->
+            <p>Welcome, <span id="admin-email"></span>!</p>
+            <p>This is your configuration panel.</p>
+        </div>
+    </div>
     <h1>Ponsonby Prints by Taylor and George</h1>
     <a class="redirect-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
-    Click here for form
+        Click here for form
     </a>
     <a class="redirect-btn" href="https://www.youtube.com/channel/UCTj4-8HDqVT2lejp7t20Zrg" target="_blank" rel="noopener">
-    Live feed of printer1
+        Live feed of printer1
     </a>
+    <div id="admin-error"></div>
     <table id="status-table">
         <thead>
             <tr>
@@ -47,18 +114,59 @@
         </tbody>
     </table>
     <script>
-    // Google Sheet as CSV
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0';
+    // Google OAuth Client ID
+    const GOOGLE_CLIENT_ID = "574156991942-neadflkj2h0p3ofrqnc7heasmuuudrtf.apps.googleusercontent.com";
+    const ADMIN_EMAIL = "taylorsquirrel05@gmail.com";
 
-    // Status mapping
+    let googleInitialized = false;
+
+    function showAdminPanel(email) {
+        document.getElementById('admin-email').textContent = email;
+        document.getElementById('admin-panel').style.display = "block";
+        document.getElementById('overlay').style.display = "block";
+    }
+    function hideAdminPanel() {
+        document.getElementById('admin-panel').style.display = "none";
+        document.getElementById('overlay').style.display = "none";
+    }
+
+    window.onload = function() {
+        // Admin button event
+        document.getElementById('adminBtn').onclick = function() {
+            document.getElementById("admin-error").textContent = "";
+            if (!googleInitialized) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse,
+                });
+                googleInitialized = true;
+            }
+            google.accounts.id.prompt();
+        };
+
+        document.getElementById('closeAdminPanel').onclick = hideAdminPanel;
+        document.getElementById('overlay').onclick = hideAdminPanel;
+    };
+
+    // Google login callback
+    function handleCredentialResponse(response) {
+        // Decode JWT (basic)
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        if (payload.email === ADMIN_EMAIL) {
+            showAdminPanel(payload.email);
+        } else {
+            document.getElementById("admin-error").textContent = "Access denied: only taylorsquirrel05@gmail.com can open the admin panel.";
+        }
+    }
+
+    // Existing table code
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0';
     const statusMap = {
         "1": "Need payment",
         "2": "To print",
         "3": "To deliver",
         "4": "Done"
     };
-
-    // Simple CSV parser
     function parseCSV(text) {
         const rows = [];
         let insideQuote = false, value = '', row = [];
@@ -81,7 +189,6 @@
         if (value || row.length) { row.push(value); rows.push(row); }
         return rows;
     }
-
     fetch(SHEET_CSV_URL)
         .then(response => response.text())
         .then(csv => {
@@ -90,10 +197,8 @@
                 alert("No data found in spreadsheet!");
                 return;
             }
-            // Find column indices
             const header = rows[0].map(h => h.trim());
             const nameCol = header.findIndex(col => col === "Name");
-            // Use the last ID column
             let idCol = -1;
             for (let i = header.length - 1; i >= 0; i--) {
                 if (header[i] === "ID") {
@@ -111,7 +216,6 @@
                 const name = row[nameCol] && row[nameCol].trim();
                 const idRaw = row[idCol] && row[idCol].trim();
                 if (name && idRaw) {
-                    // If the ID contains "=", split and use the number part
                     let id = idRaw;
                     let status = idRaw;
                     let match = /^(\d+)=/.exec(idRaw);
