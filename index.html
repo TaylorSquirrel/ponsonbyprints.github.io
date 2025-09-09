@@ -1,39 +1,19 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Ponsonby Prints by Taylor and George</title>
     <title>PonsonbyPrints</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 2em; background: #fafafa; }
         h1 { color: #333; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 0.5em; }
-        th { background: #eee; }
-        .redirect-btn {
-            display: inline-block;
-            background: #1976d2;
-            color: #fff;
-            padding: 0.75em 2em;
-            margin-bottom: 2em;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-        .redirect-btn:hover {
-            background: #1252a2;
-        }
+@@ -28,110 +28,110 @@
     </style>
 </head>
 <body>
+    <h1>Spreadsheet Status Viewer</h1>
     <h1>Ponsonby Prints by Taylor and George</h1>
-    <a class="redirect-btn" id="form-link" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
+    <a class="redirect-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdoHfj0QRgsfI7EtPWoPc7K-YchPoPFjZar53TnVv0M6hGykg/viewform?usp=header" target="_blank" rel="noopener">
         Click here for form
-    </a>
-    <a class="redirect-btn" id="yt-link" href="" target="_blank" rel="noopener">
-        Live feed of printer1
     </a>
     <table id="status-table">
         <thead>
@@ -47,13 +27,8 @@
         </tbody>
     </table>
     <script>
-    // === CHANGE THESE TWO VARIABLES TO UPDATE LINKS ===
-    const YOUTUBE_LINK = "https://www.facebook.com/stories/122100204140779683/UzpfSVNDOjEwNjUyNzQ1Mzg3NTIzODQ=/?bucket_count=9&source=story_tray";
-    const SPREADSHEET_CSV_LINK = "https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0";
-    // === END OF CONFIGURABLE VARIABLES ===
-
-    // Set the YouTube link
-    document.getElementById("yt-link").href = YOUTUBE_LINK;
+    // Google Sheet as CSV
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I/export?format=csv&id=1kk6iR1kxubokQLowXvSAxYIHwrb8eJVuCnR2wfHaL6I&gid=0';
 
     // Status mapping
     const statusMap = {
@@ -87,7 +62,7 @@
         return rows;
     }
 
-    fetch(SPREADSHEET_CSV_LINK)
+    fetch(SHEET_CSV_URL)
         .then(response => response.text())
         .then(csv => {
             const rows = parseCSV(csv);
